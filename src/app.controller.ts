@@ -17,6 +17,7 @@ import { JwtAuthGuard } from './auth/jwt-auth.guard';
 import { UsersService } from './users/users.service';
 import { CreateUserDto } from './users/dto/createUser.dto';
 import { User } from './users/entity/user.entity';
+import passport from 'passport';
 
 @Controller()
 export class AppController {
@@ -38,9 +39,12 @@ export class AppController {
 
   @UseGuards(JwtAuthGuard)
   @Get('homepage')
-  getHome(@Request() req) {
+  async getUsers(@Request() req) {
     // return req.user;
-    return this.userService.findAll();
+    const users = await this.userService.findAll();
+    return users.map((user) => {
+      return { id: user.id, username: user.username };
+    });
   }
 
   @UseGuards(JwtAuthGuard)
@@ -50,10 +54,12 @@ export class AppController {
     if (!user) {
       throw new NotFoundException('User not found');
     }
-    return user;
+    const { password, ...rest } = user;
+    return rest;
   }
 
-  @Delete('users/:username')
+  @UseGuards(JwtAuthGuard)
+  @Delete('deleteusers/:username')
   async deleteUserByUsername(
     @Param('username') username: string,
   ): Promise<User> {
